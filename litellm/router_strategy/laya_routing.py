@@ -5,8 +5,10 @@ Routes each request to the deployment tier matching how complex the request
 actually is, as scored by the `laya` decision model (convaiinnovations/laya
 on Hugging Face: https://huggingface.co/convaiinnovations/laya).
 
-Deployments opt into a tier via `model_info.tier` in the model_list config.
-Tiers and their descriptions are configurable via routing_strategy_args.
+Deployments opt into a tier via `model_info.complexity_tier` in the model_list
+config. (Not `model_info.tier`: that field already exists, typed to just
+"free"/"paid" for budget routing, so laya uses its own field name.) Tiers and
+their descriptions are configurable via routing_strategy_args.
 
 The `laya` package is imported lazily, on first prediction, so it is only
 a hard dependency when this strategy is actually selected.
@@ -196,7 +198,7 @@ class LayaRoutingStrategy(CustomRoutingStrategyBase):
         if exact_match:
             verbose_router_logger.info("[laya] routed to tier=%s", target)
         else:
-            actual_tier: Final = selected.get("model_info", {}).get("tier", "unknown")
+            actual_tier: Final = selected.get("model_info", {}).get("complexity_tier", "unknown")
             verbose_router_logger.warning(
                 "[laya] no deployment for tier '%s', fallback to deployment tier '%s'", target, actual_tier
             )
@@ -232,7 +234,7 @@ class LayaRoutingStrategy(CustomRoutingStrategyBase):
         for deployment in deployments:
             if not isinstance(deployment, dict):
                 continue
-            if deployment.get("model_info", {}).get("tier", "") == target_tier:
+            if deployment.get("model_info", {}).get("complexity_tier", "") == target_tier:
                 return deployment, True
 
         for deployment in deployments:
