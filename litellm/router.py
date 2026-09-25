@@ -743,6 +743,7 @@ class Router:
             "cost-based-routing",
             "usage-based-routing-v2",
             "lar1",
+            "laya",
         ] = "simple-shuffle",
         optional_pre_call_checks: OptionalPreCallChecks | None = None,
         routing_strategy_args: dict = {},  # just for latency-based
@@ -1069,6 +1070,10 @@ class Router:
             from litellm.router_strategy.lar1_routing import apply_lar1_routing_strategy
 
             apply_lar1_routing_strategy(self, routing_strategy_args)
+        elif self._normalize_strategy(routing_strategy) == "laya":
+            from litellm.router_strategy.laya_routing import apply_laya_routing_strategy
+
+            apply_laya_routing_strategy(self, routing_strategy_args)
         else:
             self.routing_strategy_init(
                 routing_strategy=routing_strategy,
@@ -1250,7 +1255,7 @@ class Router:
 
     def _validate_routing_strategy(self, routing_strategy: RoutingStrategy | str | None) -> None:
         # See: https://github.com/BerriAI/litellm/issues/11330
-        valid_strategy_strings: Final = ["simple-shuffle", "lar1"] + [s.value for s in RoutingStrategy]
+        valid_strategy_strings: Final = ["simple-shuffle", "lar1", "laya"] + [s.value for s in RoutingStrategy]
         if routing_strategy is None:
             return
         is_valid_string: Final = isinstance(routing_strategy, str) and routing_strategy in valid_strategy_strings
@@ -1340,6 +1345,11 @@ class Router:
             from litellm.router_strategy.lar1_routing import apply_lar1_routing_strategy
 
             apply_lar1_routing_strategy(self, self.routing_strategy_args)
+            return
+        if strategy == "laya":
+            from litellm.router_strategy.laya_routing import apply_laya_routing_strategy
+
+            apply_laya_routing_strategy(self, self.routing_strategy_args)
             return
 
         attr: Final = self._DEFAULT_SELECTOR_ATTR_BY_STRATEGY.get(strategy or "")
@@ -12003,6 +12013,15 @@ class Router:
                                 )
 
                                 apply_lar1_routing_strategy(
+                                    self,
+                                    kwargs.get("routing_strategy_args"),
+                                )
+                            elif value == "laya":
+                                from litellm.router_strategy.laya_routing import (
+                                    apply_laya_routing_strategy,
+                                )
+
+                                apply_laya_routing_strategy(
                                     self,
                                     kwargs.get("routing_strategy_args"),
                                 )
